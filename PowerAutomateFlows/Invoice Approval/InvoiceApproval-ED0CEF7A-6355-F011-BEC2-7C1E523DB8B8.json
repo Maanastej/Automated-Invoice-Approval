@@ -1,0 +1,657 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_sharepointonline": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "cr32f_sharedsharepointonline_825f3"
+        },
+        "api": {
+          "name": "shared_sharepointonline"
+        }
+      },
+      "shared_approvals": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "cr32f_sharedapprovals_563b1"
+        },
+        "api": {
+          "name": "shared_approvals"
+        }
+      },
+      "shared_office365": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "cr32f_sharedoffice365_3575c"
+        },
+        "api": {
+          "name": "shared_office365"
+        }
+      },
+      "shared_commondataserviceforapps": {
+        "impersonation": {},
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "cr32f_sharedcommondataserviceforapps_b14fb"
+        },
+        "api": {
+          "name": "shared_commondataserviceforapps"
+        }
+      },
+      "shared_onedriveforbusiness": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "cr32f_sharedonedriveforbusiness_87436"
+        },
+        "api": {
+          "name": "shared_onedriveforbusiness"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "When_a_file_is_created_(properties_only)": {
+          "recurrence": {
+            "frequency": "Minute",
+            "interval": 1
+          },
+          "splitOn": "@triggerOutputs()?['body/value']",
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "dataset": "https://molabanti.sharepoint.com",
+              "table": "e09b1f84-72b3-4d00-bccb-a69e0bc062c5",
+              "folderPath": "/Shared Documents/Waiting Approval"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "connectionName": "shared_sharepointonline",
+              "operationId": "GetOnNewFileItems"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        }
+      },
+      "actions": {
+        "Get_items": {
+          "runAfter": {
+            "Initialize_Total_": [
+              "Succeeded"
+            ]
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "dataset": "https://molabanti.sharepoint.com",
+              "table": "59a37800-fe53-498f-a350-71a19cb99be1",
+              "$top": 10
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "connectionName": "shared_sharepointonline",
+              "operationId": "GetItems"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Filter_array": {
+          "runAfter": {
+            "Get_items": [
+              "Succeeded"
+            ]
+          },
+          "type": "Query",
+          "inputs": {
+            "from": "@outputs('Get_items')?['body/value']",
+            "where": "@equals(int(trim(string(item()?['Level']))), 1)\n"
+          }
+        },
+        "Compose_InvoiceTotal": {
+          "runAfter": {
+            "Process_documents": [
+              "Succeeded"
+            ]
+          },
+          "type": "Compose",
+          "inputs": "@float(\r\n    if(\r\n        or(\r\n            equals(outputs('Process_documents')?['body/responsev2/predictionOutput/labels/invoiceTotal/value'], null),\r\n            equals(trim(string(outputs('Process_documents')?['body/responsev2/predictionOutput/labels/invoiceTotal/value'])), '')\r\n        ),\r\n        '0',\r\n        replace(\r\n            replace(\r\n                trim(string(outputs('Process_documents')?['body/responsev2/predictionOutput/labels/invoiceTotal/value'])),\r\n            '₹', ''),\r\n        ',', '')\r\n    )\r\n)\r\n"
+        },
+        "Filter_array-copy": {
+          "runAfter": {
+            "Select": [
+              "Succeeded"
+            ]
+          },
+          "type": "Query",
+          "inputs": {
+            "from": "@outputs('Get_items')?['body/value']",
+            "where": "@equals(int(trim(string(item()?['Level']))), 2)\n"
+          }
+        },
+        "Filter_array-copy_1": {
+          "runAfter": {
+            "Select_1": [
+              "Succeeded"
+            ]
+          },
+          "type": "Query",
+          "inputs": {
+            "from": "@outputs('Get_items')?['body/value']",
+            "where": "@equals(int(trim(string(item()?['Level']))), 3)\r\n"
+          }
+        },
+        "Compose_1": {
+          "runAfter": {
+            "Select_2": [
+              "Succeeded"
+            ]
+          },
+          "type": "Compose",
+          "inputs": "@{join(body('Select'), ';')}\n"
+        },
+        "Compose_2": {
+          "runAfter": {
+            "Parse_JSON": [
+              "Succeeded"
+            ]
+          },
+          "type": "Compose",
+          "inputs": "@{join(body('Select_1'), ';')}\n"
+        },
+        "Compose_3": {
+          "runAfter": {
+            "Parse_JSON-copy": [
+              "Succeeded"
+            ]
+          },
+          "type": "Compose",
+          "inputs": "@join(body('Select_2'), ';')"
+        },
+        "Select_1": {
+          "runAfter": {
+            "Filter_array-copy": [
+              "Succeeded"
+            ]
+          },
+          "type": "Select",
+          "inputs": {
+            "from": "@body('Filter_array-copy')",
+            "select": {
+              "Email": "@item()?['Email']"
+            }
+          }
+        },
+        "Select_2": {
+          "runAfter": {
+            "Filter_array-copy_1": [
+              "Succeeded"
+            ]
+          },
+          "type": "Select",
+          "inputs": {
+            "from": "@body('Filter_array-copy_1')",
+            "select": {
+              "Email": "@item()?['Email']"
+            }
+          }
+        },
+        "Select": {
+          "runAfter": {
+            "Filter_array": [
+              "Succeeded"
+            ]
+          },
+          "type": "Select",
+          "inputs": {
+            "from": "@body('Filter_array')",
+            "select": {
+              "Email": "@item()?['Email']"
+            }
+          }
+        },
+        "Parse_JSON": {
+          "runAfter": {
+            "Compose_1": [
+              "Succeeded"
+            ]
+          },
+          "type": "ParseJson",
+          "inputs": {
+            "content": "@outputs('Compose_1')\r\n",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "Email": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "Parse_JSON-copy": {
+          "runAfter": {
+            "Compose_2": [
+              "Succeeded"
+            ]
+          },
+          "type": "ParseJson",
+          "inputs": {
+            "content": "@outputs('Compose_2')",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "Email": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "Parse_JSON-copy_1": {
+          "runAfter": {
+            "Compose_3": [
+              "Succeeded"
+            ]
+          },
+          "type": "ParseJson",
+          "inputs": {
+            "content": "@outputs('Compose_3')",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "Email": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "Initialize_Total_": {
+          "runAfter": {
+            "Compose_InvoiceTotal": [
+              "Succeeded"
+            ]
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "InvoiceTotal",
+                "type": "float",
+                "value": "@outputs('Compose_InvoiceTotal')"
+              }
+            ]
+          }
+        },
+        "Initialize_Array": {
+          "runAfter": {
+            "Parse_JSON-copy_1": [
+              "Succeeded"
+            ]
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "ApproverList",
+                "type": "array",
+                "value": "@outputs('Get_items')?['body/value']"
+              }
+            ]
+          }
+        },
+        "Set_variable": {
+          "runAfter": {
+            "Initialize_Status": [
+              "Succeeded"
+            ]
+          },
+          "type": "SetVariable",
+          "inputs": {
+            "name": "ApproverList",
+            "value": "@if(less(float(trim(string(outputs('Compose_InvoiceTotal')))), 1000),\r\n  createArray(\r\n    body('Parse_JSON')?['Email']\r\n  ),\r\nif(lessOrEquals(float(trim(string(outputs('Compose_InvoiceTotal')))), 5000),\r\n  createArray(\r\n    body('Parse_JSON')?['Email'],\r\n    body('Parse_JSON-copy')?['Email']\r\n  ),\r\n  createArray(\r\n    body('Parse_JSON')?['Email'],\r\n    body('Parse_JSON-copy')?['Email'],\r\n    body('Parse_JSON-copy_1')?['Email']\r\n  )))\r\n"
+          }
+        },
+        "Compose": {
+          "runAfter": {
+            "Set_variable": [
+              "Succeeded"
+            ]
+          },
+          "type": "Compose",
+          "inputs": "@if(less(float(trim(string(outputs('Compose_InvoiceTotal')))), 1000),\r\n  createArray(\r\n    body('Parse_JSON')?['Email']\r\n  ),\r\nif(lessOrEquals(float(trim(string(outputs('Compose_InvoiceTotal')))), 5000),\r\n  createArray(\r\n    body('Parse_JSON')?['Email'],\r\n    body('Parse_JSON-copy')?['Email']\r\n  ),\r\n  createArray(\r\n    body('Parse_JSON')?['Email'],\r\n    body('Parse_JSON-copy')?['Email'],\r\n    body('Parse_JSON-copy_1')?['Email']\r\n  )))"
+        },
+        "Initialize_Index": {
+          "runAfter": {
+            "Initialize_Array": [
+              "Succeeded"
+            ]
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "ApproverLoopIndex",
+                "type": "integer",
+                "value": "@0"
+              }
+            ]
+          }
+        },
+        "Initialize_Status": {
+          "runAfter": {
+            "Initialize_Index": [
+              "Succeeded"
+            ]
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "ApprovalStatus",
+                "type": "string",
+                "value": "\"Pending\""
+              }
+            ]
+          }
+        },
+        "Do_until": {
+          "actions": {
+            "Compose_4": {
+              "type": "Compose",
+              "inputs": "@variables('ApproverList')[variables('ApproverLoopIndex')]\r\n"
+            },
+            "Start_and_wait_for_an_approval": {
+              "runAfter": {
+                "Compose_4": [
+                  "Succeeded"
+                ]
+              },
+              "type": "OpenApiConnectionWebhook",
+              "inputs": {
+                "parameters": {
+                  "approvalType": "BasicAwaitAll",
+                  "WebhookApprovalCreationInput/title": "@concat('Approval Request - ', first(body('Get_items')?['value'])?['Department']?['Value'])\r\n",
+                  "WebhookApprovalCreationInput/assignedTo": "@outputs('Compose_4')\r\n",
+                  "WebhookApprovalCreationInput/details": "\n@{concat(\r\n  'This invoice is related to the ',\r\n  first(body('Get_items')?['value'])?['Department']?['Value'],\r\n  ' department. Please review and approve accordingly.'\r\n)\r\n}\nInvoice ID: @{outputs('Process_documents')?['body/responsev2/predictionOutput/labels/invoiceId/value']}\nInvoice Date: @{outputs('Process_documents')?['body/responsev2/predictionOutput/labels/invoiceDate/value']}\nTotal: @{outputs('Process_documents')?['body/responsev2/predictionOutput/labels/invoiceTotal/value']}\n",
+                  "WebhookApprovalCreationInput/itemLink": "@triggerBody()?['{Link}']",
+                  "WebhookApprovalCreationInput/enableNotifications": true,
+                  "WebhookApprovalCreationInput/enableReassignment": true
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_approvals",
+                  "connectionName": "shared_approvals",
+                  "operationId": "StartAndWaitForAnApproval"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Condition": {
+              "actions": {
+                "Set_variable_1": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "ApprovalStatus",
+                    "value": "@{'Approved'}\n"
+                  }
+                },
+                "Set_variable_2": {
+                  "runAfter": {
+                    "Compose_5": [
+                      "Succeeded"
+                    ]
+                  },
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "ApproverLoopIndex",
+                    "value": "@outputs('Compose_5')\r\n"
+                  }
+                },
+                "Compose_5": {
+                  "runAfter": {
+                    "Set_variable_1": [
+                      "Succeeded"
+                    ]
+                  },
+                  "type": "Compose",
+                  "inputs": "@add(variables('ApproverLoopIndex'), 1)\r\n"
+                }
+              },
+              "runAfter": {
+                "Start_and_wait_for_an_approval": [
+                  "Succeeded"
+                ]
+              },
+              "else": {
+                "actions": {
+                  "Set_variable_1-copy": {
+                    "type": "SetVariable",
+                    "inputs": {
+                      "name": "ApprovalStatus",
+                      "value": "@'Rejected'"
+                    }
+                  }
+                }
+              },
+              "expression": {
+                "and": [
+                  {
+                    "equals": [
+                      "@body('Start_and_wait_for_an_approval')?['outcome']",
+                      "@'Approve'"
+                    ]
+                  }
+                ]
+              },
+              "type": "If"
+            }
+          },
+          "runAfter": {
+            "Compose": [
+              "Succeeded"
+            ]
+          },
+          "expression": "@or(\r\n  equals(variables('ApprovalStatus'), 'Rejected'),\r\n  greaterOrEquals(variables('ApproverLoopIndex'), length(variables('ApproverList')))\r\n)\r\n",
+          "limit": {
+            "count": 60
+          },
+          "type": "Until"
+        },
+        "Condition_1": {
+          "actions": {
+            "Move_file": {
+              "runAfter": {
+                "Send_an_email_(V2)": [
+                  "Succeeded"
+                ]
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "dataset": "https://molabanti.sharepoint.com",
+                  "parameters/sourceFileId": "@triggerBody()?['{Identifier}']",
+                  "parameters/destinationDataset": "https://molabanti.sharepoint.com",
+                  "parameters/destinationFolderPath": "/Shared Documents/Approved",
+                  "parameters/nameConflictBehavior": 2
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                  "connectionName": "shared_sharepointonline",
+                  "operationId": "MoveFileAsync"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Send_an_email_(V2)": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "@outputs('Compose_4')",
+                  "emailMessage/Subject": "Invoice Approval",
+                  "emailMessage/Body": "<p class=\"editor-paragraph\">The Invoice: @{outputs('Process_documents')?['body/responsev2/predictionOutput/labels/invoiceId/value']} has been <u><b><strong class=\"editor-text-bold editor-text-underline\">approved</strong></b></u>.</p><p class=\"editor-paragraph\">Click here for documents : <a href=\"@{triggerBody()?['{Link}']}\" class=\"editor-link\">Approved Document</a></p><br>",
+                  "emailMessage/Importance": "Normal"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "connectionName": "shared_office365",
+                  "operationId": "SendEmailV2"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            }
+          },
+          "runAfter": {
+            "Compose_6": [
+              "Succeeded"
+            ]
+          },
+          "else": {
+            "actions": {
+              "Send_an_email_(V2)-copy": {
+                "type": "OpenApiConnection",
+                "inputs": {
+                  "parameters": {
+                    "emailMessage/To": "@outputs('Compose_4')",
+                    "emailMessage/Subject": "Invoice Approval",
+                    "emailMessage/Body": "<p class=\"editor-paragraph\">The Invoice: @{outputs('Process_documents')?['body/responsev2/predictionOutput/labels/invoiceId/value']} has been <u><b><strong class=\"editor-text-bold editor-text-underline\">rejected</strong></b></u>.</p><p class=\"editor-paragraph\">@{triggerBody()?['{Link}']}</p>",
+                    "emailMessage/Importance": "Normal"
+                  },
+                  "host": {
+                    "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                    "connectionName": "shared_office365",
+                    "operationId": "SendEmailV2"
+                  },
+                  "authentication": "@parameters('$authentication')"
+                }
+              }
+            }
+          },
+          "expression": {
+            "and": [
+              {
+                "equals": [
+                  "@outputs('Compose_6')",
+                  "@true"
+                ]
+              }
+            ]
+          },
+          "type": "If"
+        },
+        "Compose_6": {
+          "runAfter": {
+            "Do_until": [
+              "Succeeded"
+            ]
+          },
+          "type": "Compose",
+          "inputs": "@equals(trim(replace(variables('ApprovalStatus'), '\"', '')), 'Approved')\r\n"
+        },
+        "Get_files_(properties_only)": {
+          "runAfter": {
+            "Get_file_content_using_path_1": [
+              "Succeeded"
+            ]
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "dataset": "https://molabanti.sharepoint.com",
+              "table": "e09b1f84-72b3-4d00-bccb-a69e0bc062c5"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "connectionName": "shared_sharepointonline",
+              "operationId": "GetFileItems"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Process_documents": {
+          "runAfter": {
+            "Get_files_(properties_only)": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "flowSystemMetadata": {
+              "portalOperationId": "aibuilderpredict_formsprocessing",
+              "portalOperationGroup": "aibuilder",
+              "portalOperationApiDisplayNameOverride": "AI Builder",
+              "portalOperationIconOverride": "https://content.powerapps.com/resource/makerx/static/pauto/images/designeroperations/aiBuilderNew.51dbdb6b.png",
+              "portalOperationBrandColorOverride": "#0A76C4",
+              "portalOperationApiTierOverride": "Standard"
+            }
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "recordId": "957e0071-11a5-40f9-81bb-c2b6d8413bfd",
+              "item/requestv2/mimeType": "application/pdf",
+              "item/requestv2/base64Encoded": "@body('Get_file_content_using_path_1')"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "connectionName": "shared_commondataserviceforapps",
+              "operationId": "aibuilderpredict_formsprocessing"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "List_files_in_folder": {
+          "runAfter": {},
+          "metadata": {
+            "b!JrOxBwVDY02MX8TFY1CxrfBzHc9kssZDkbX92iOm7cnf7zNamGTgR4AwthsbQOVQ.01EET4CH4YLJ4PANW7XBG34PPDIWVHQF7C": "/Apps/Microsoft Forms/Customer Form",
+            "b!JrOxBwVDY02MX8TFY1CxrfBzHc9kssZDkbX92iOm7cnf7zNamGTgR4AwthsbQOVQ.01EET4CH2WZV2JZAFWJRE3CWMGW7KOC4L7": "/Apps/Microsoft Forms/Customer Form/Question"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "id": "b!JrOxBwVDY02MX8TFY1CxrfBzHc9kssZDkbX92iOm7cnf7zNamGTgR4AwthsbQOVQ.01EET4CH2WZV2JZAFWJRE3CWMGW7KOC4L7"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness",
+              "connectionName": "shared_onedriveforbusiness",
+              "operationId": "ListFolderV2"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Get_file_content_using_path_1": {
+          "runAfter": {
+            "List_files_in_folder": [
+              "Succeeded"
+            ]
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "path": "@first(\r\n    reverse(\r\n        sort(\r\n            body('List_files_in_folder')?['value'],\r\n            'LastModified'\r\n        )\r\n    )\r\n)?['Path']\r\n",
+              "inferContentType": true
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness",
+              "connectionName": "shared_onedriveforbusiness",
+              "operationId": "GetFileContentByPath"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        }
+      },
+      "outputs": {}
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

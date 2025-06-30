@@ -1,0 +1,396 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_microsoftforms": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "cr32f_sharedmicrosoftforms_69616"
+        },
+        "api": {
+          "name": "shared_microsoftforms"
+        }
+      },
+      "shared_onedriveforbusiness": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "cr32f_sharedonedriveforbusiness_87436"
+        },
+        "api": {
+          "name": "shared_onedriveforbusiness"
+        }
+      },
+      "shared_sharepointonline": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "cr32f_sharedsharepointonline_825f3"
+        },
+        "api": {
+          "name": "shared_sharepointonline"
+        }
+      },
+      "shared_commondataserviceforapps": {
+        "impersonation": {},
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "cr32f_sharedcommondataserviceforapps_b14fb"
+        },
+        "api": {
+          "name": "shared_commondataserviceforapps"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "When_a_new_response_is_submitted": {
+          "splitOn": "@triggerOutputs()?['body/value']",
+          "metadata": {
+            "operationMetadataId": "ccd67108-5f0d-4985-bf9c-e26242af83a6"
+          },
+          "type": "OpenApiConnectionWebhook",
+          "inputs": {
+            "parameters": {
+              "form_id": "qV54qqGovE2yOGXIRn8MtEOuQdy_Z-NMhHXYJ2H96zVUMlpMVjVTMlQxT0pOVk5JTjkwMVBXUE1EQS4u"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_microsoftforms",
+              "connectionName": "shared_microsoftforms",
+              "operationId": "CreateFormWebhook"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        }
+      },
+      "actions": {
+        "Get_response_details": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "4e82bd7b-0c19-4615-9fa1-200e91f3a843"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "form_id": "qV54qqGovE2yOGXIRn8MtEOuQdy_Z-NMhHXYJ2H96zVUMlpMVjVTMlQxT0pOVk5JTjkwMVBXUE1EQS4u",
+              "response_id": "@triggerOutputs()?['body/resourceData/responseId']"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_microsoftforms",
+              "connectionName": "shared_microsoftforms",
+              "operationId": "GetFormResponseById"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Compose": {
+          "runAfter": {
+            "Get_response_details": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "36f4ca3b-9c56-4270-b47b-b4046e8f50f7"
+          },
+          "type": "Compose",
+          "inputs": "@body('Get_response_details')?['rc70ed35c89264e7c9eeae0d7b16a0b7e']"
+        },
+        "Condition": {
+          "actions": {
+            "Parse_JSON": {
+              "metadata": {
+                "operationMetadataId": "ae11809e-8405-4158-8996-5b6d4036066b"
+              },
+              "type": "ParseJson",
+              "inputs": {
+                "content": "@json(outputs('Compose'))\r\n",
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "link": {
+                        "type": "string"
+                      },
+                      "id": {
+                        "type": "string"
+                      },
+                      "type": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "size": {
+                        "type": "integer"
+                      },
+                      "referenceId": {
+                        "type": "string"
+                      },
+                      "driveId": {
+                        "type": "string"
+                      },
+                      "status": {
+                        "type": "integer"
+                      },
+                      "uploadSessionUrl": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "Apply_to_each": {
+              "foreach": "@body('Parse_JSON')",
+              "actions": {
+                "Get_file_content_using_path": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "path": "/Apps/Microsoft Forms/Customer Form/Question/Sample_Maanastej B.docx",
+                      "inferContentType": true
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness",
+                      "connectionName": "shared_onedriveforbusiness",
+                      "operationId": "GetFileContentByPath"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                },
+                "Add_attachment": {
+                  "runAfter": {
+                    "Create_item": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "63c160a8-6e3c-48ad-b8f5-508683fcec98"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://molabanti.sharepoint.com",
+                      "table": "c4b1f051-c337-46a3-88ba-aa5ed0398007",
+                      "itemId": "@outputs('Create_item')?['body/ID']",
+                      "displayName": "@items('Apply_to_each')?['name']\r\n",
+                      "body": "@body('Get_file_content_using_path')"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "connectionName": "shared_sharepointonline",
+                      "operationId": "CreateAttachment"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                },
+                "Upload_a_file_or_an_image": {
+                  "runAfter": {
+                    "Add_a_new_row": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "ea3e17cb-9f71-4ffd-9feb-77cc8f2d723b"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "x-ms-file-name": "@items('Apply_to_each')?['name']\r\n",
+                      "entityName": "cr32f_customers",
+                      "recordId": "@outputs('Add_a_new_row')?['body/cr32f_customerid']\r\n",
+                      "fileImageFieldName": "cr32f_document",
+                      "item": "@body('Get_file_content_using_path')"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                      "connectionName": "shared_commondataserviceforapps",
+                      "operationId": "UpdateEntityFileImageFieldContent"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                },
+                "Create_item": {
+                  "runAfter": {
+                    "Get_file_content_using_path": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "121b10f2-962d-4ea2-ba4f-e3d5fe01fa75"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://molabanti.sharepoint.com",
+                      "table": "c4b1f051-c337-46a3-88ba-aa5ed0398007",
+                      "item/CustomerName": "@outputs('Get_response_details')?['body/r0e6e55a452df474c86312e181fac2acb']",
+                      "item/CustomerEmail": "@outputs('Get_response_details')?['body/rb209e817d6c44b79a1a07f67e78be0bc']",
+                      "item/Address": "@outputs('Get_response_details')?['body/rd5eb686b387a4ad9846bd6c0b25cce20']",
+                      "item/PhoneNumber": "@outputs('Get_response_details')?['body/r8fddef6d710e4fb68916a8b87c68e0b7']"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "connectionName": "shared_sharepointonline",
+                      "operationId": "PostItem"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                },
+                "Add_a_new_row": {
+                  "runAfter": {
+                    "Add_attachment": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "29c775bf-6a93-4505-af04-d24a983fced2"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "entityName": "cr32f_customers",
+                      "item/cr32f_customer1": "@outputs('Get_response_details')?['body/r0e6e55a452df474c86312e181fac2acb']",
+                      "item/cr32f_customeremail": "@outputs('Get_response_details')?['body/rb209e817d6c44b79a1a07f67e78be0bc']",
+                      "item/cr32f_address": "@outputs('Get_response_details')?['body/rd5eb686b387a4ad9846bd6c0b25cce20']",
+                      "item/cr32f_phonenumber": "@outputs('Get_response_details')?['body/r8fddef6d710e4fb68916a8b87c68e0b7']"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                      "connectionName": "shared_commondataserviceforapps",
+                      "operationId": "CreateRecord"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                },
+                "Create_file": {
+                  "runAfter": {
+                    "Upload_a_file_or_an_image": [
+                      "Succeeded"
+                    ]
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://molabanti.sharepoint.com",
+                      "folderPath": "/Shared Documents/Waiting Approval",
+                      "name": "@items('Apply_to_each')?['name']",
+                      "body": "@body('Get_file_content_using_path')"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "connectionName": "shared_sharepointonline",
+                      "operationId": "CreateFile"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  },
+                  "runtimeConfiguration": {
+                    "contentTransfer": {
+                      "transferMode": "Chunked"
+                    }
+                  }
+                }
+              },
+              "runAfter": {
+                "Parse_JSON": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "ddb9edbf-57c4-462e-b1d9-928a33733be7"
+              },
+              "type": "Foreach"
+            }
+          },
+          "runAfter": {
+            "Compose": [
+              "Succeeded"
+            ]
+          },
+          "else": {
+            "actions": {
+              "Create_item-copy": {
+                "metadata": {
+                  "operationMetadataId": "121b10f2-962d-4ea2-ba4f-e3d5fe01fa75"
+                },
+                "type": "OpenApiConnection",
+                "inputs": {
+                  "parameters": {
+                    "dataset": "https://molabanti.sharepoint.com",
+                    "table": "c4b1f051-c337-46a3-88ba-aa5ed0398007",
+                    "item/CustomerName": "@outputs('Get_response_details')?['body/r0e6e55a452df474c86312e181fac2acb']",
+                    "item/CustomerEmail": "@outputs('Get_response_details')?['body/rb209e817d6c44b79a1a07f67e78be0bc']",
+                    "item/Address": "@outputs('Get_response_details')?['body/rd5eb686b387a4ad9846bd6c0b25cce20']",
+                    "item/PhoneNumber": "@outputs('Get_response_details')?['body/r8fddef6d710e4fb68916a8b87c68e0b7']"
+                  },
+                  "host": {
+                    "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                    "connectionName": "shared_sharepointonline",
+                    "operationId": "PostItem"
+                  },
+                  "authentication": "@parameters('$authentication')"
+                }
+              },
+              "Add_a_new_row-copy": {
+                "runAfter": {
+                  "Create_item-copy": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "29c775bf-6a93-4505-af04-d24a983fced2"
+                },
+                "type": "OpenApiConnection",
+                "inputs": {
+                  "parameters": {
+                    "entityName": "cr32f_customers",
+                    "item/cr32f_customer1": "@outputs('Get_response_details')?['body/r0e6e55a452df474c86312e181fac2acb']",
+                    "item/cr32f_customeremail": "@outputs('Get_response_details')?['body/rb209e817d6c44b79a1a07f67e78be0bc']",
+                    "item/cr32f_address": "@outputs('Get_response_details')?['body/rd5eb686b387a4ad9846bd6c0b25cce20']",
+                    "item/cr32f_phonenumber": "@outputs('Get_response_details')?['body/r8fddef6d710e4fb68916a8b87c68e0b7']"
+                  },
+                  "host": {
+                    "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                    "connectionName": "shared_commondataserviceforapps",
+                    "operationId": "CreateRecord"
+                  },
+                  "authentication": "@parameters('$authentication')"
+                }
+              }
+            }
+          },
+          "expression": {
+            "and": [
+              {
+                "equals": [
+                  "@not(empty(outputs('Get_response_details')?['body']['rc70ed35c89264e7c9eeae0d7b16a0b7e']))\r\n",
+                  "@true"
+                ]
+              }
+            ]
+          },
+          "type": "If"
+        }
+      },
+      "outputs": {}
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}
