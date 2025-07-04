@@ -1,15 +1,15 @@
-# 📝 Power Automate Flow: Microsoft Forms to SharePoint, Dataverse, and File Uploads
+#  Power Automate Flow: Microsoft Forms to SharePoint, Dataverse, and File Uploads
 
 This repository contains two integrated Power Automate flows that trigger sequentially upon Microsoft Forms submission. These flows automate the process of data extraction, document handling, storage in SharePoint and Dataverse, and managing approvals.
 
 ---
 
-## 📌 Overview
+##  Overview
 
-### 🔗 Trigger: Microsoft Form Submission
+###  Trigger: Microsoft Form Submission
 A Microsoft Form submission starts the entire process.
 
-### 🔁 Flow 1: **Customer Details**
+###  Flow 1: **Customer Details**
 - Triggered when a new form response is submitted.
 - Retrieves details from the submitted form.
 - Extracts file references from a file upload question.
@@ -19,14 +19,19 @@ A Microsoft Form submission starts the entire process.
   - Microsoft Dataverse (CRM system)
   - SharePoint Library (for approval)
 
-### 🔁 Flow 2: **Invoice Approval**
-- Starts once Flow 1 completes and stores files in SharePoint.
+###  Flow 2: **Invoice Approval**
+- Starts once Flow 1 or Flow 3 completes and stores files in SharePoint.
 - Sends a sequential approval request based on logic (e.g., invoice total or other criteria).
 - Loops through levels of approval until final confirmation is received.
 
----
 
-## 📂 Components Used
+### Flow 3: **Cloud Unzip**
+- Starts when an email arrives on Outlook with a zip file containing multiple invoices.
+- It uploads the file to OneDrive and from there uses an Encodian connector to extract the individual invoices.
+- It finally puts these files into the same Sharepoint folder which then triggers the invoice approval.
+
+---
+##  Components Used
 
 | Component                  | Usage                                                   |
 |---------------------------|----------------------------------------------------------|
@@ -38,7 +43,7 @@ A Microsoft Form submission starts the entire process.
 
 ---
 
-## ⚙️ Flow 1: Form Response Handler
+##  Flow 1: Form Response Handler
 
 ### Key Steps:
 1. **Trigger**: New Form Response Submitted
@@ -56,7 +61,7 @@ A Microsoft Form submission starts the entire process.
 
 ---
 
-## ⚙️ Flow 2: Approval Workflow (Triggered After Flow 1)
+##  Flow 2: Approval Workflow (Triggered After Flow 1)
 
 ### Key Features:
 - Dynamically fetches approver levels from a SharePoint List (`ApprovalMatrix`)
@@ -67,7 +72,7 @@ A Microsoft Form submission starts the entire process.
 
 ---
 
-## ✅ Benefits
+##  Benefits
 - No manual entry or file download/upload
 - Centralized customer and file data in SharePoint and Dataverse
 - Enforced audit trail via mandatory comment approvals
@@ -75,7 +80,7 @@ A Microsoft Form submission starts the entire process.
 
 ---
 
-## 🛠️ Prerequisites
+##  Prerequisites
 
 - Microsoft 365 with:
   - Power Automate access
@@ -85,7 +90,7 @@ A Microsoft Form submission starts the entire process.
 
 ---
 
-## 🔐 Security Note
+##  Security Note
 Ensure:
 - Proper access rights are granted to Power Automate connections.
 - OneDrive paths used in the flow are accessible.
@@ -93,7 +98,7 @@ Ensure:
 
 ---
 
-## 🧩 Customization Ideas
+##  Customization Ideas
 
 - Add Power BI dashboards to visualize submissions and approval rates.
 - Send confirmation emails to submitters.
@@ -101,7 +106,7 @@ Ensure:
 
 ---
 
-## 📞 Contact
+##  Contact
 
 For questions, issues, or customization help, reach out to the flow owner or contributor.
 
