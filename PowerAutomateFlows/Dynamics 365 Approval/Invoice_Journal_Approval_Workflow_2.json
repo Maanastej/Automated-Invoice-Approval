@@ -1,0 +1,676 @@
+{
+  "name": "3110e2df-1752-4f8b-8dcc-aab5c3aa939c",
+  "id": "/providers/Microsoft.Flow/flows/3110e2df-1752-4f8b-8dcc-aab5c3aa939c",
+  "type": "Microsoft.Flow/flows",
+  "properties": {
+    "apiId": "/providers/Microsoft.PowerApps/apis/shared_logicflows",
+    "displayName": "Invoice Journal Approval Workflow 2",
+    "definition": {
+      "metadata": {
+        "defaultDataverseMetadataHeader": null,
+        "workflowEntityId": null,
+        "processAdvisorMetadata": null,
+        "flowChargedByPaygo": null,
+        "flowclientsuspensionreason": "None",
+        "flowclientsuspensiontime": null,
+        "flowclientsuspensionreasondetails": null,
+        "creator": {
+          "id": "bf85dcd3-7cd6-4939-a085-92657b86d68b",
+          "type": "User",
+          "tenantId": "007b3d70-6166-44e3-a2c3-4152544ee6d6"
+        },
+        "provisioningMethod": "FromDefinition",
+        "failureAlertSubscription": true,
+        "clientLastModifiedTime": "2025-07-11T03:52:37.3710173Z",
+        "connectionKeySavedTimeKey": "2025-07-11T03:52:37.3710173Z",
+        "creationSource": null,
+        "modifiedSources": "Portal",
+        "clientCreatedTime": "2025-07-11T05:47:49.1308173Z",
+        "migrationSourceId": "/subscriptions/75778887-84a9-4060-957e-3929bda2bd61/resourceGroups/007b3d70616644e3a2c34152544ee6d6-default007b3d70616644e3a2c34152544ee6d6-env/providers/Microsoft.Logic/workflows/3110e2df-1752-4f8b-8dcc-aab5c3aa939c-azshadow"
+      },
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "When_a_Business_Event_occurs": {
+          "metadata": {
+            "operationMetadataId": "ab637939-f936-49b5-a0a8-2490c79b20a7"
+          },
+          "type": "OpenApiConnectionWebhook",
+          "inputs": {
+            "parameters": {
+              "dataset": "devintern.sandbox.operations.dynamics.com",
+              "businesseventcategory": "Workflow workitem",
+              "businessevent": "Workflow_VendInvoiceRecordingTemplate_000133_VendInvoiceRecordingApproval_WorkItem",
+              "legalEntity": "USMF"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_dynamicsax",
+              "connectionName": "shared_dynamicsax-1",
+              "operationId": "SubscribeOnABusinessEvent"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        }
+      },
+      "actions": {
+        "Parse_JSON": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "820769d6-f621-4d4e-b392-96de8af221e3"
+          },
+          "type": "ParseJson",
+          "inputs": {
+            "content": "@triggerBody()",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "BusinessEventId": { "type": "string" },
+                "BusinessEventLegalEntity": { "type": "string" },
+                "ContextRecId": { "type": "integer" },
+                "ContextRecordSubject": { "type": "string" },
+                "ControlNumber": { "type": "integer" },
+                "EventCategory": { "type": "string" },
+                "EventId": { "type": "string" },
+                "EventTime": { "type": "string" },
+                "EventTimeIso8601": { "type": "string" },
+                "InitiatingUserAADObjectId": { "type": "string" },
+                "LinkToWeb": { "type": "string" },
+                "ListOfOutcomes": {},
+                "MajorVersion": { "type": "integer" },
+                "MinorVersion": { "type": "integer" },
+                "OutcomeName": { "type": "string" },
+                "ParentContextRecordSubjects": {},
+                "SerializedWorkflowDocumentData": {},
+                "WorkflowComment": { "type": "string" },
+                "WorkflowConfigurationId": { "type": "string" },
+                "WorkflowCorrelationId": { "type": "string" },
+                "WorkflowCreatedDateTime": { "type": "string" },
+                "WorkflowDocument": { "type": "string" },
+                "WorkflowDueDate": { "type": "string" },
+                "WorkflowInstanceId": { "type": "string" },
+                "WorkflowLastActionUser": { "type": "string" },
+                "WorkflowOriginator": { "type": "string" },
+                "WorkflowOwner": { "type": "string" },
+                "WorkflowSequenceNumber": { "type": "string" },
+                "WorkflowStepInstruction": { "type": "string" },
+                "WorkflowTemplateName": { "type": "string" },
+                "WorkflowUserEmail": { "type": "string" },
+                "WorkflowVersion": { "type": "string" },
+                "WorkflowWorkItemInstanceId": { "type": "string" },
+                "WorkflowWorkItemSubject": { "type": "string" },
+                "WorkitemOwner": { "type": "string" }
+              }
+            }
+          }
+        },
+        "Execute_action": {
+          "runAfter": {
+            "Parse_JSON": ["Succeeded"]
+          },
+          "metadata": {
+            "operationMetadataId": "8df3fdac-b2e7-4427-be23-c432163c0bae"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "dataset": "devintern.sandbox.operations.dynamics.com",
+              "procedure": "WorkflowWorkItems/Microsoft.Dynamics.DataEntities.validate",
+              "parameters/WorkflowWorkItemInstanceId": "@body('Parse_JSON')?['WorkflowWorkItemInstanceId']"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_dynamicsax",
+              "connectionName": "shared_dynamicsax-1",
+              "operationId": "ExecuteProcedure"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Condition_3": {
+          "actions": {
+            "Condition": {
+              "actions": {
+                "Send_an_email_(V2)": {
+                  "metadata": {
+                    "operationMetadataId": "cf254bbe-05fe-48fa-bd03-47278962206d"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "emailMessage/To": "@body('Parse_JSON')?['WorkflowUserEmail']",
+                      "emailMessage/Subject": "Action needed for: @{body('Parse_JSON')?['WorkflowInstanceId']}",
+                      "emailMessage/Body": "<p class=\"editor-paragraph\">Workflow ID: @{body('Parse_JSON')?['WorkflowInstanceId']}<br>Instructions: @{body('Parse_JSON')?['WorkflowStepInstruction']}<br>Last comment: @{body('Parse_JSON')?['WorkflowComment']}<br>This item is not ready for completion. Data changes may be needed. Review work item by <a href=\"@{body('Parse_JSON')?['LinkToWeb']}\" class=\"editor-link\">clicking here</a>.</p>",
+                      "emailMessage/Importance": "Normal"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                      "connectionName": "shared_office365",
+                      "operationId": "SendEmailV2"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                }
+              },
+              "else": {
+                "actions": {
+                  "Condition_1": {
+                    "actions": {
+                      "Send_an_email_(V2)_1": {
+                        "metadata": {
+                          "operationMetadataId": "8d618ed5-1fd5-4ba1-9d9d-8405c76078a3"
+                        },
+                        "type": "OpenApiConnection",
+                        "inputs": {
+                          "parameters": {
+                            "emailMessage/To": "@body('Parse_JSON')?['WorkflowUserEmail']",
+                            "emailMessage/Subject": "Action needed for: @{body('Parse_JSON')?['WorkflowInstanceId']}",
+                            "emailMessage/Body": "<p class=\"editor-paragraph\">Workflow ID: @{body('Parse_JSON')?['WorkflowInstanceId']}<br>Instructions: @{body('Parse_JSON')?['WorkflowStepInstruction']}<br>Last comment: @{body('Parse_JSON')?['WorkflowComment']}<br>This item is not ready for completion. Data changes may be needed. Review work item by <a href=\"@{body('Parse_JSON')?['LinkToWeb']}\" class=\"editor-link\">clicking here</a>.</p>",
+                            "emailMessage/Importance": "Normal"
+                          },
+                          "host": {
+                            "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                            "connectionName": "shared_office365",
+                            "operationId": "SendEmailV2"
+                          },
+                          "authentication": "@parameters('$authentication')"
+                        }
+                      }
+                    },
+                    "else": {
+                      "actions": {
+                        "Start_and_wait_for_an_approval": {
+                          "metadata": {
+                            "operationMetadataId": "c9233c99-d906-4ba2-b5d1-07072fe8e41b"
+                          },
+                          "type": "OpenApiConnectionWebhook",
+                          "inputs": {
+                            "parameters": {
+                              "approvalType": "CustomResponse",
+                              "WebhookApprovalCreationInput/responseOptions": ["Approve", "Reject", "Request Change"],
+                              "WebhookApprovalCreationInput/title": "Action Needed For @{body('Parse_JSON')?['WorkflowDocument']}",
+                              "WebhookApprovalCreationInput/assignedTo": "@body('Parse_JSON')?['WorkflowUserEmail']",
+                              "WebhookApprovalCreationInput/details": "Please approve the @{body('Parse_JSON')?['WorkflowDocument']}",
+                              "WebhookApprovalCreationInput/itemLink": "@body('Parse_JSON')?['LinkToWeb']",
+                              "WebhookApprovalCreationInput/itemLinkDescription": "@{body('Parse_JSON')?['WorkflowStepInstruction']}, @{body('Parse_JSON')?['WorkflowDocument']}",
+                              "WebhookApprovalCreationInput/enableNotifications": true,
+                              "WebhookApprovalCreationInput/enableReassignment": true
+                            },
+                            "host": {
+                              "apiId": "/providers/Microsoft.PowerApps/apis/shared_approvals",
+                              "connectionName": "shared_approvals",
+                              "operationId": "StartAndWaitForAnApproval"
+                            },
+                            "authentication": "@parameters('$authentication')"
+                          }
+                        },
+                        "Condition_2": {
+                          "actions": {
+                            "For_each_2": {
+                              "foreach": "@outputs('Start_and_wait_for_an_approval')?['body/responses']",
+                              "actions": {
+                                "Execute_action_3": {
+                                  "metadata": {
+                                    "operationMetadataId": "415b2d5d-a4d6-48fc-8940-e449c09aa499"
+                                  },
+                                  "type": "OpenApiConnection",
+                                  "inputs": {
+                                    "parameters": {
+                                      "dataset": "devintern.sandbox.operations.dynamics.com",
+                                      "procedure": "WorkflowWorkItems/Microsoft.Dynamics.DataEntities.complete",
+                                      "parameters/WorkflowWorkItemInstanceId": "@body('Parse_JSON')?['WorkflowWorkItemInstanceId']",
+                                      "parameters/Outcome": "RequestChange",
+                                      "parameters/Comment": "@items('For_each_2')?['comments']",
+                                      "parameters/TargetUser": "@body('Parse_JSON')?['WorkflowOriginator']",
+                                      "parameters/RunAsUser": "@body('Parse_JSON')?['WorkitemOwner']"
+                                    },
+                                    "host": {
+                                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_dynamicsax",
+                                      "connectionName": "shared_dynamicsax-1",
+                                      "operationId": "ExecuteProcedure"
+                                    },
+                                    "authentication": "@parameters('$authentication')"
+                                  }
+                                }
+                              },
+                              "metadata": {
+                                "operationMetadataId": "ed2e5af0-929f-4d4d-b7cf-98577e71044f"
+                              },
+                              "type": "Foreach"
+                            }
+                          },
+                          "runAfter": {
+                            "Start_and_wait_for_an_approval": ["Succeeded"]
+                          },
+                          "else": {
+                            "actions": {
+                              "For_each": {
+                                "foreach": "@outputs('Start_and_wait_for_an_approval')?['body/responses']",
+                                "actions": {
+                                  "Execute_action_1": {
+                                    "metadata": {
+                                      "operationMetadataId": "b19a4c57-fdcd-4456-80e2-4fcf03bbd71b"
+                                    },
+                                    "type": "OpenApiConnection",
+                                    "inputs": {
+                                      "parameters": {
+                                        "dataset": "devintern.sandbox.operations.dynamics.com",
+                                        "procedure": "WorkflowWorkItems/Microsoft.Dynamics.DataEntities.complete",
+                                        "parameters/WorkflowWorkItemInstanceId": "@body('Parse_JSON')?['WorkflowWorkItemInstanceId']",
+                                        "parameters/Outcome": "@outputs('Start_and_wait_for_an_approval')?['body/outcome']",
+                                        "parameters/Comment": "@items('For_each')?['comments']",
+                                        "parameters/TargetUser": "@body('Parse_JSON')?['WorkitemOwner']",
+                                        "parameters/RunAsUser": "@body('Parse_JSON')?['WorkitemOwner']"
+                                      },
+                                      "host": {
+                                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_dynamicsax",
+                                        "connectionName": "shared_dynamicsax-1",
+                                        "operationId": "ExecuteProcedure"
+                                      },
+                                      "authentication": "@parameters('$authentication')"
+                                    }
+                                  }
+                                },
+                                "metadata": {
+                                  "operationMetadataId": "69935900-913f-49ec-9155-f2a5e5d9237f"
+                                },
+                                "type": "Foreach"
+                              }
+                            }
+                          },
+                          "expression": {
+                            "and": [
+                              {
+                                "equals": [
+                                  "@outputs('Start_and_wait_for_an_approval')?['body/outcome']",
+                                  "Request Change"
+                                ]
+                              }
+                            ]
+                          },
+                          "metadata": {
+                            "operationMetadataId": "4d4ea524-55f4-4b78-a25e-a5b98c342474"
+                          },
+                          "type": "If"
+                        },
+                        "Terminate": {
+                          "runAfter": {
+                            "Condition_2": ["Succeeded"]
+                          },
+                          "metadata": {
+                            "operationMetadataId": "549ac78b-680f-4c44-8268-33cd3da2823b"
+                          },
+                          "type": "Terminate",
+                          "inputs": {
+                            "runStatus": "Succeeded"
+                          }
+                        }
+                      }
+                    },
+                    "expression": {
+                      "and": [
+                        {
+                          "equals": [
+                            "@body('Parse_JSON')?['WorkflowWorkItemSubject']",
+                            "Change requested"
+                          ]
+                        }
+                      ]
+                    },
+                    "metadata": {
+                      "operationMetadataId": "5128f046-c680-4723-b349-667ed415ad0a"
+                    },
+                    "type": "If"
+                  },
+                  "Terminate_1": {
+                    "runAfter": {
+                      "Condition_1": ["Succeeded"]
+                    },
+                    "metadata": {
+                      "operationMetadataId": "5825e5f5-46ce-4d46-9ed5-61596b2af8a6"
+                    },
+                    "type": "Terminate",
+                    "inputs": {
+                      "runStatus": "Succeeded"
+                    }
+                  }
+                }
+              },
+              "expression": {
+                "and": [
+                  {
+                    "equals": [
+                      "@body('Parse_JSON')?['WorkflowWorkItemSubject']",
+                      "Record returned"
+                    ]
+                  }
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "42970e77-6522-437d-988a-b37cdbd9c581"
+              },
+              "type": "If"
+            },
+            "Terminate_2": {
+              "runAfter": {
+                "Condition": ["Succeeded"]
+              },
+              "metadata": {
+                "operationMetadataId": "11331e29-e05c-40f2-b9e2-38ae25868b50"
+              },
+              "type": "Terminate",
+              "inputs": {
+                "runStatus": "Succeeded"
+              }
+            },
+            "Add_a_new_row_to_selected_environment": {
+              "metadata": {
+                "operationMetadataId": "690e13ab-144c-4b70-860d-aa64813c9f7a"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "organization": "https://org3aaf486f.crm8.dynamics.com",
+                  "entityName": "cre96_businessevents",
+                  "item/cre96_businesseventlegalentity": "@body('Parse_JSON')?['BusinessEventId']",
+                  "item/cre96_contextrecid": "@body('Parse_JSON')?['ContextRecId']",
+                  "item/cre96_contextrecordsubject": "@body('Parse_JSON')?['ContextRecordSubject']",
+                  "item/cre96_controlnumber": "@body('Parse_JSON')?['ControlNumber']",
+                  "item/cre96_eventid": "@body('Parse_JSON')?['EventId']",
+                  "item/cre96_initiatinguseraadobjectid": "@body('Parse_JSON')?['InitiatingUserAADObjectId']",
+                  "item/cre96_eventtime": "@formatDateTime(\r\n  addSeconds(\r\n    '1970-01-01T00:00:00Z',\r\n    div(\r\n      int(substring(body('Parse_JSON')?['EventTime'],6,13)),\r\n      1000\r\n    )\r\n  ),\r\n  'yyyy-MM-ddTHH:mm:ssZ'\r\n)\r\n",
+                  "item/cre96_eventtimeiso8601": "@body('Parse_JSON')?['EventTimeIso8601']",
+                  "item/cre96_journalbatchnumber": "@outputs('Compose')",
+                  "item/cre96_linktoweb": "@body('Parse_JSON')?['LinkToWeb']",
+                  "item/cre96_majorversion": "@body('Parse_JSON')?['MajorVersion']",
+                  "item/cre96_minorversion": "@body('Parse_JSON')?['MinorVersion']",
+                  "item/cre96_outcomename": "@variables('Approval Status')",
+                  "item/cre96_workflowcomment": "@body('Parse_JSON')?['WorkflowComment']",
+                  "item/cre96_workflowconfigurationid": "@body('Parse_JSON')?['WorkflowConfigurationId']",
+                  "item/cre96_workflowcorrelationid": "@body('Parse_JSON')?['WorkflowCorrelationId']",
+                  "item/cre96_workflowcreateddatetime": "@if(\r\n  greaterOrEquals(\r\n    int(substring(body('Parse_JSON')?['WorkflowCreatedDateTime'],6,13)),\r\n    0\r\n  ),\r\n  formatDateTime(\r\n    addSeconds(\r\n      '1970-01-01T00:00:00Z',\r\n      div(\r\n        int(substring(body('Parse_JSON')?['WorkflowCreatedDateTime'],6,13)),\r\n        1000\r\n      )\r\n    ),\r\n    'yyyy-MM-ddTHH:mm:ssZ'\r\n  ),\r\n  utcNow()\r\n)\r\n",
+                  "item/cre96_workflowdocument": "@body('Parse_JSON')?['WorkflowDocument']",
+                  "item/cre96_workflowduedate": "@if(\r\n  greaterOrEquals(\r\n    int(substring(body('Parse_JSON')?['WorkflowDueDate'],6,13)),\r\n    0\r\n  ),\r\n  formatDateTime(\r\n    addSeconds(\r\n      '1970-01-01T00:00:00Z',\r\n      div(\r\n        int(substring(body('Parse_JSON')?['WorkflowDueDate'],6,13)),\r\n        1000\r\n      )\r\n    ),\r\n    'yyyy-MM-ddTHH:mm:ssZ'\r\n  ),\r\n  utcNow()\r\n)\r\n",
+                  "item/cre96_workflowinstanceid": "@body('Parse_JSON')?['WorkflowInstanceId']",
+                  "item/cre96_workflowlastactionuser": "@body('Parse_JSON')?['WorkflowLastActionUser']",
+                  "item/cre96_workfloworiginator": "@body('Parse_JSON')?['WorkflowOriginator']",
+                  "item/cre96_workflowowner": "@body('Parse_JSON')?['WorkflowOwner']",
+                  "item/cre96_workflowstepinstruction": "@body('Parse_JSON')?['WorkflowStepInstruction']",
+                  "item/cre96_workflowtemplatename": "@body('Parse_JSON')?['WorkflowTemplateName']",
+                  "item/cre96_workflowuseremail": "@body('Parse_JSON')?['WorkflowUserEmail']",
+                  "item/cre96_workflowversion": "@body('Parse_JSON')?['WorkflowVersion']",
+                  "item/cre96_workflowworkiteminstanceid": "@body('Parse_JSON')?['WorkflowWorkItemInstanceId']",
+                  "item/cre96_workflowworkitemsubject": "@body('Parse_JSON')?['WorkflowWorkItemSubject']",
+                  "item/cre96_workitemowner": "@body('Parse_JSON')?['WorkitemOwner']"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                  "connectionName": "shared_commondataserviceforapps",
+                  "operationId": "CreateRecordWithOrganization"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "When_a_row_is_added,_modified_or_deleted": {
+              "type": "OpenApiConnectionWebhook",
+              "inputs": {
+                "parameters": {
+                  "subscriptionRequest/message": 3,
+                  "subscriptionRequest/entityname": "cre96_businessevent",
+                  "subscriptionRequest/scope": 1,
+                  "subscriptionRequest/filteringattributes": "cre96_outcomename,cre96_approvercomment"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                  "connectionName": "shared_commondataserviceforapps",
+                  "operationId": "SubscribeWebhookTrigger"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Switch": {
+              "runAfter": {
+                "When_a_row_is_added,_modified_or_deleted": ["Succeeded"]
+              },
+              "cases": {
+                "Case": {
+                  "case": "Approved",
+                  "actions": {
+                    "Execute_action_approved": {
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "dataset": "devintern.sandbox.operations.dynamics.com",
+                          "procedure": "WorkflowWorkItems/Microsoft.Dynamics.DataEntities.complete",
+                          "parameters/WorkflowWorkItemInstanceId": "@body('Parse_JSON')?['WorkflowWorkItemInstanceId']",
+                          "parameters/Outcome": "Approve",
+                          "parameters/Comment": "@outputs('When_a_row_is_added,_modified_or_deleted')?['body/cre96_approvercomment']",
+                          "parameters/TargetUser": "@body('Parse_JSON')?['WorkitemOwner']",
+                          "parameters/RunAsUser": "@body('Parse_JSON')?['WorkitemOwner']"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_dynamicsax",
+                          "connectionName": "shared_dynamicsax-1",
+                          "operationId": "ExecuteProcedure"
+                        },
+                        "authentication": "@parameters('$authentication')"
+                      }
+                    }
+                  }
+                },
+                "Case 2": {
+                  "case": "Rejected",
+                  "actions": {
+                    "Execute_action_approved_rejected": {
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "dataset": "devintern.sandbox.operations.dynamics.com",
+                          "procedure": "WorkflowWorkItems/Microsoft.Dynamics.DataEntities.complete",
+                          "parameters/WorkflowWorkItemInstanceId": "@body('Parse_JSON')?['WorkflowInstanceId']",
+                          "parameters/Outcome": "Reject",
+                          "parameters/Comment": "@outputs('When_a_row_is_added,_modified_or_deleted')?['body/cre96_approvercomment']",
+                          "parameters/TargetUser": "@body('Parse_JSON')?['WorkitemOwner']",
+                          "parameters/RunAsUser": "@body('Parse_JSON')?['WorkitemOwner']"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_dynamicsax",
+                          "connectionName": "shared_dynamicsax-1",
+                          "operationId": "ExecuteProcedure"
+                        },
+                        "authentication": "@parameters('$authentication')"
+                      }
+                    }
+                  }
+                }
+              },
+              "default": {
+                "actions": {
+                  "Execute_action_approved_requestchange": {
+                    "type": "OpenApiConnection",
+                    "inputs": {
+                      "parameters": {
+                        "dataset": "devintern.sandbox.operations.dynamics.com",
+                        "procedure": "WorkflowWorkItems/Microsoft.Dynamics.DataEntities.complete",
+                        "parameters/WorkflowWorkItemInstanceId": "@body('Parse_JSON')?['WorkflowWorkItemInstanceId']",
+                        "parameters/Outcome": "RequestChange",
+                        "parameters/Comment": "@outputs('When_a_row_is_added,_modified_or_deleted')?['body/cre96_approvercomment']",
+                        "parameters/TargetUser": "@body('Parse_JSON')?['WorkflowOriginator']",
+                        "parameters/RunAsUser": "@body('Parse_JSON')?['WorkitemOwner']"
+                      },
+                      "host": {
+                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_dynamicsax",
+                        "connectionName": "shared_dynamicsax-1",
+                        "operationId": "ExecuteProcedure"
+                      },
+                      "authentication": "@parameters('$authentication')"
+                    }
+                  }
+                }
+              },
+              "expression": "@outputs('When_a_row_is_added,_modified_or_deleted')?['body/cre96_outcomename']",
+              "type": "Switch"
+            },
+            "Lists_items_present_in_table": {
+              "runAfter": {
+                "Add_a_new_row_to_selected_environment": ["Succeeded"]
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "dataset": "devintern.sandbox.operations.dynamics.com",
+                  "table": "VendInvoiceJournalLines"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_dynamicsax",
+                  "connectionName": "shared_dynamicsax-1",
+                  "operationId": "GetItems"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "For_each_1": {
+              "foreach": "@outputs('Lists_items_present_in_table')?['body/value']",
+              "actions": {
+                "Add_a_new_row_to_selected_environment_1": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "organization": "https://org3aaf486f.crm8.dynamics.com",
+                      "entityName": "cre96_workflowinstanceids",
+                      "item/cre96_invoice": "@items('For_each_1')?['JournalBatchNumber']",
+                      "item/cre96_account": "@items('For_each_1')?['AccountDisplayValue']",
+                      "item/cre96_currency": "@items('For_each_1')?['Currency']",
+                      "item/cre96_debitamount": "@items('For_each_1')?['Debit']",
+                      "item/cre96_offsetaccount": "@items('For_each_1')?['OffsetAccountDisplayValue']",
+                      "item/cre96_offsetaccounttype": "@items('For_each_1')?['OffsetAccountType']",
+                      "item/cre96_voucher": "@items('For_each_1')?['Voucher']"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                      "connectionName": "shared_commondataserviceforapps",
+                      "operationId": "CreateRecordWithOrganization"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                }
+              },
+              "runAfter": {
+                "Lists_items_present_in_table": ["Succeeded"]
+              },
+              "type": "Foreach"
+            }
+          },
+          "runAfter": {
+            "Compose": ["Succeeded"]
+          },
+          "else": {
+            "actions": {
+              "Send_an_email_(V2)_2": {
+                "metadata": {
+                  "operationMetadataId": "319e5476-16c7-414a-b841-cea7a3d49df1"
+                },
+                "type": "OpenApiConnection",
+                "inputs": {
+                  "parameters": {
+                    "emailMessage/To": "@body('Parse_JSON')?['WorkflowUserEmail']",
+                    "emailMessage/Subject": "Action needed for: @{body('Parse_JSON')?['WorkflowInstanceId']}",
+                    "emailMessage/Body": "<p class=\"editor-paragraph\">Workflow ID: @{body('Parse_JSON')?['WorkflowInstanceId']}<br>Instructions: @{body('Parse_JSON')?['WorkflowStepInstruction']}<br>Last comment: @{body('Parse_JSON')?['WorkflowComment']}<br>This item is not ready for completion. Data changes may be needed. Review work item by <a href=\"@{body('Parse_JSON')?['LinkToWeb']}\" class=\"editor-link\">clicking here</a>.</p>",
+                    "emailMessage/Importance": "Normal"
+                  },
+                  "host": {
+                    "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                    "connectionName": "shared_office365",
+                    "operationId": "SendEmailV2"
+                  },
+                  "authentication": "@parameters('$authentication')"
+                }
+              }
+            }
+          },
+          "expression": {
+            "and": [
+              {
+                "equals": [
+                  "@outputs('Execute_action')?['body/OutputParameters/value']",
+                  "True"
+                ]
+              }
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "6b77456c-842c-41fd-8299-5b37a26e4fdd"
+          },
+          "type": "If"
+        },
+        "Initialize_variable": {
+          "runAfter": {
+            "Execute_action": ["Succeeded"]
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "Approval Status",
+                "type": "string",
+                "value": "Pending"
+              }
+            ]
+          }
+        },
+        "Compose": {
+          "runAfter": {
+            "Initialize_variable": ["Succeeded"]
+          },
+          "type": "Compose",
+          "inputs": "@split(split(body('Parse_JSON')?['WorkflowDocument'], ': ')[1], ',')[0]\r\n"
+        }
+      },
+      "outputs": {},
+      "connectionReferences": {
+        "shared_dynamicsax-1": {
+          "connectionName": "shared-dynamicsax-342a13ac-4e04-4505-8737-fa1b1e4f2f13",
+          "source": "Embedded",
+          "id": "/providers/Microsoft.PowerApps/apis/shared_dynamicsax",
+          "tier": "NotSpecified",
+          "apiName": "dynamicsax",
+          "isProcessSimpleApiReferenceConversionAlreadyDone": false
+        },
+        "shared_office365": {
+          "connectionName": "shared-office365-be8af670-6142-4a7a-8727-681ba8b8bcb7",
+          "source": "Embedded",
+          "id": "/providers/Microsoft.PowerApps/apis/shared_office365",
+          "tier": "NotSpecified",
+          "apiName": "office365",
+          "isProcessSimpleApiReferenceConversionAlreadyDone": false
+        },
+        "shared_approvals": {
+          "connectionName": "shared-approvals-5ef91bbc-47b0-463f-8b31-a3abe2372685",
+          "source": "Embedded",
+          "id": "/providers/Microsoft.PowerApps/apis/shared_approvals",
+          "tier": "NotSpecified",
+          "apiName": "approvals",
+          "isProcessSimpleApiReferenceConversionAlreadyDone": false
+        },
+        "shared_commondataserviceforapps": {
+          "connectionName": "a9dbfb5ef65440b381013e0d613fa10e",
+          "source": "Embedded",
+          "id": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+          "tier": "NotSpecified",
+          "apiName": "commondataserviceforapps",
+          "isProcessSimpleApiReferenceConversionAlreadyDone": false
+        }
+      },
+      "flowFailureAlertSubscribed": false,
+      "isManaged": false
+    }
+  }
+}
