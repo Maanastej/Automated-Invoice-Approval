@@ -1,114 +1,120 @@
-#  Power Automate Flow: Microsoft Forms to SharePoint, Dataverse, and File Uploads
+# Power Automate Workflow Suite: Microsoft Forms ➝ SharePoint, Dataverse, Power Apps Login & D365 Invoice Approval
 
-This repository contains two integrated Power Automate flows that trigger sequentially upon Microsoft Forms submission. These flows automate the process of data extraction, document handling, storage in SharePoint and Dataverse, and managing approvals.
+This repository contains a complete low-code automation solution for invoice processing using Power Automate, SharePoint, Dataverse, Power Apps, and (D365 F&O). It includes:
+
+- ZIP File extraction & document storage
+- AI processing of invoices for data capture
+- Power Apps user login and approval
+- Dataverse-integrated user management
+- Multi-level invoice approval via email from D365 workflows
+
+---
+
+## Workflow Overview
+#### **Flow 1: Customer Details**
+- Trigger: New Microsoft Form response
+- Actions:
+  - Extract form data and uploaded files
+  - Store metadata in SharePoint List
+  - Store file content in Dataverse binary column
+  - Upload PDFs to SharePoint Library
+
+#### **Flow 2: Invoice Approval (Triggers after Flow 1/Flow 3)**
+- Trigger: File saved in SharePoint Document Library
+- Fetch approvers dynamically from SharePoint `ApprovalMatrix`
+- Loop through approval levels sequentially:
+  - Waits for comment input
+  - Skips levels based on amount or logic
+  - Resends if approval if the comment is missing
+
+#### **Flow 3: Cloud Unzip for Zip Invoices**
+- Trigger: New email with `.zip` attachment
+- Uploads the zip to OneDrive
+- Uses Encodian connector to extract multiple PDF invoices
+- Moves invoices to SharePoint Library
 
 ---
 
-##  Overview
+## Power Apps: User Login & Workflow Dashboard
 
-###  Trigger: Microsoft Form Submission
-A Microsoft Form submission starts the entire process.
+### 🔹 Power Apps Features:
+- **Login screen**:
+  - Username and password inputs
+- **Forgot password**:
+  - Reset mechanism with email validation using a time-limited OTP
+  - Ensures a previous password cant be used
+- **Sign-up screen**:
+  - Email and password inputs
+  - Password strength checker
+- **Workflow Dashboard**:
+  - Shows invoice approval status
+  - View recent approvals linked by Workflow ID
 
-###  Flow 1: **Customer Details**
-- Triggered when a new form response is submitted.
-- Retrieves details from the submitted form.
-- Extracts file references from a file upload question.
-- Parses uploaded files (OneDrive location).
-- Adds the user’s data and uploaded documents to:
-  - A SharePoint List
-  - Microsoft Dataverse (CRM system)
-  - SharePoint Library (for approval)
-
-###  Flow 2: **Invoice Approval**
-- Starts once Flow 1 or Flow 3 completes and stores files in SharePoint.
-- Sends a sequential approval request based on logic (e.g., invoice total or other criteria).
-- Loops through levels of approval until final confirmation is received.
-
-
-### Flow 3: **Cloud Unzip**
-- Starts when an email arrives on Outlook with a zip file containing multiple invoices.
-- It uploads the file to OneDrive and from there uses an Encodian connector to extract the individual invoices.
-- It finally puts these files into the same Sharepoint folder which then triggers the invoice approval.
+###  Dataverse Integration:
+- Table: User Data (All login related details), Business Events (All approval workflow related details)
+- Used in Power Apps to:
+  - Authenticate users
+  - Fetch related records for display
 
 ---
+
+##  D365 F&O Flow: Business Event-Driven Invoice Approval
+
+###  Trigger:
+- D365 Business Event: `Workflow_VendInvoiceRecordingApproval_WorkItem`
+- Legal Entity: USMF
+
+###  Actions:
+1. **Parse business event payload**
+2. **Validate invoice work item** using `WorkflowWorkItems.validate`
+3. **Conditionally send approvals**:
+   - If subject = `Record returned` → send email with "review required"
+   - If subject = `Change requested` → send approval using "Start and wait for an approval"
+4. **Handle Approvals**:
+   - Loop through responses
+   - Update D365 using `WorkflowWorkItems.complete`
+   - Store status and details in Dataverse table (`cre96_businessevents`)
+
+###  Email Notifications:
+- Sent to approver with:
+  - Workflow instructions
+  - Last comment
+  - Direct link to D365 work item
+
 ##  Components Used
 
-| Component                  | Usage                                                   |
-|---------------------------|----------------------------------------------------------|
-| Microsoft Forms           | Source of customer/form data input                      |
-| OneDrive for Business     | Temporary storage for uploaded files                     |
-| SharePoint Online         | Stores metadata (List) and files (Document Library)      |
-| Microsoft Dataverse       | Stores structured CRM/customer data                     |
-| Power Automate (Flow)     | Automation backbone                                     |
-
----
-
-##  Flow 1: Form Response Handler
-
-### Key Steps:
-1. **Trigger**: New Form Response Submitted
-2. **Get Form Response Details**
-3. **Extract and Parse Uploaded Files**
-4. **Create SharePoint List Item**
-5. **Upload Documents to:**
-   - SharePoint List (as attachments)
-   - Dataverse Table (as binary field)
-   - SharePoint Document Library (for approval)
-
-### Conditions:
-- If uploaded files are present → run full process
-- If no files are uploaded → skip file handling and proceed with SharePoint and Dataverse entries only
-
----
-
-##  Flow 2: Approval Workflow (Triggered After Flow 1)
-
-### Key Features:
-- Dynamically fetches approver levels from a SharePoint List (`ApprovalMatrix`)
-- Sends approval requests **one by one**, level by level
-- Uses condition checks:
-  - If approver doesn't provide a comment → resends the request
-  - If comment is valid → proceeds to next level or completes approval
+| Component                        | Purpose                                                   |
+|----------------------------------|-----------------------------------------------------------|
+| Microsoft Forms                 | Customer input                                            |
+| SharePoint Online               | Metadata & Document storage                               |
+| OneDrive for Business           | Temporary file handling (zip extractions)                 |
+| Microsoft Dataverse             | Structured storage for login, logs, and invoice data      |
+| Power Apps                      | Login interface and workflow dashboard                    |
+| Power Automate (Cloud Flows)    | Orchestration and automation backbone                     |
+| Dynamics 365 F&O (Business Events) | Source for invoice approvals based on workflow events |
 
 ---
 
 ##  Benefits
-- No manual entry or file download/upload
-- Centralized customer and file data in SharePoint and Dataverse
-- Enforced audit trail via mandatory comment approvals
-- Streamlined multi-level approval without repetition
+
+- Centralized document storage and approval history
+- Secure Power Apps login using Dataverse
+- Real-time invoice processing from SharePoint or D365
+- Multi-level approval logic with email + approval tracking
+- Reusable building blocks for future invoice/HR/workflows
 
 ---
 
 ##  Prerequisites
 
-- Microsoft 365 with:
-  - Power Automate access
+- Microsoft 365 tenant with:
   - SharePoint Online
+  - Power Apps
+  - Power Automate
   - Microsoft Forms
-  - Dataverse (optional if CRM integration is desired)
+  - Dataverse
+  - Dynamics 365 F&O (for Flow 4)
 
 ---
 
-##  Security Note
-Ensure:
-- Proper access rights are granted to Power Automate connections.
-- OneDrive paths used in the flow are accessible.
-- SharePoint list and library permissions are managed for contributors and approvers.
-
----
-
-##  Customization Ideas
-
-- Add Power BI dashboards to visualize submissions and approval rates.
-- Send confirmation emails to submitters.
-- Add adaptive cards in Teams for real-time approvals.
-
----
-
-##  Contact
-
-For questions, issues, or customization help, reach out to the flow owner or contributor.
-
----
 
